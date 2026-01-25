@@ -1,37 +1,7 @@
-use glam::{Mat4, Vec3, Vec4};
+use glam::{Mat4, Vec4};
 use miniquad::*;
 
 use crate::render::{mesh_batch::Instance, mesh_manager::MeshManager, shader::*, vertex::Vertex};
-
-pub struct Camera {
-    pub position: Vec3,
-    pub target: Vec3,
-    pub up: Vec3,
-    pub fov: f32,
-    pub aspect: f32,
-    pub near: f32,
-    pub far: f32,
-}
-
-impl Camera {
-    pub fn new(aspect: f32) -> Self {
-        Self {
-            position: Vec3::new(0.0, 0.0, 0.0),
-            target: Vec3::ZERO,
-            up: Vec3::Y,
-            fov: 45.0_f32.to_radians(),
-            aspect,
-            near: 0.1,
-            far: 10000.0,
-        }
-    }
-
-    pub fn view_projection(&self) -> Mat4 {
-        let view = Mat4::look_at_rh(self.position, self.target, self.up);
-        let projection = Mat4::perspective_rh(self.fov, self.aspect, self.near, self.far);
-        projection * view
-    }
-}
 
 pub struct Renderer {
     solid_pipeline: Pipeline,

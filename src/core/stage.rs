@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::time::Instant;
 
-use glam::{Quat, Vec2, Vec3, Vec3Swizzles, Vec4};
+use glam::{Quat, Vec2, Vec3, Vec4};
 use hecs::{Entity, World};
 use miniquad::{EventHandler, KeyCode, KeyMods, PassAction, RenderingBackend, window};
 use rand::Rng;
@@ -13,6 +13,7 @@ use crate::components::navigation::NavigationTarget;
 use crate::components::physics::{Forces, Inertia, Mass, Velocity};
 use crate::components::render::Renderable;
 use crate::components::transform::Transform;
+use crate::render::camera::Camera;
 use crate::render::mesh_batch::Instance;
 use crate::render::mesh_manager::MeshManager;
 use crate::render::renderer::*;

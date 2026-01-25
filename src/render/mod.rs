@@ -1,3 +1,4 @@
+pub mod camera;
 pub mod mesh_batch;
 pub mod mesh_manager;
 pub mod renderer;
