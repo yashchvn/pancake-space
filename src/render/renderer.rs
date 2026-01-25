@@ -16,7 +16,7 @@ pub struct Camera {
 impl Camera {
     pub fn new(aspect: f32) -> Self {
         Self {
-            position: Vec3::new(0.0, 0.0, -5.0),
+            position: Vec3::new(0.0, 0.0, 0.0),
             target: Vec3::ZERO,
             up: Vec3::Y,
             fov: 45.0_f32.to_radians(),
@@ -64,13 +64,13 @@ impl Renderer {
             VertexAttribute::with_buffer("in_color", VertexFormat::Float4, 1),
         ];
 
-        let shader = ctx
+        let geom_shader = ctx
             .new_shader(
                 ShaderSource::Glsl {
-                    vertex: &load_shader("src/assets/shaders/vert.glsl"),
-                    fragment: &load_shader("src/assets/shaders/frag.glsl"),
+                    vertex: &load_shader("src/assets/shaders/geom_vert.glsl"),
+                    fragment: &load_shader("src/assets/shaders/geom_frag.glsl"),
                 },
-                shader_meta(),
+                geometry_shader_meta(),
             )
             .unwrap();
 
@@ -86,7 +86,7 @@ impl Renderer {
         let solid_pipeline = ctx.new_pipeline(
             &[buffer_layout.clone(), instance_buffer_layout.clone()],
             &attributes,
-            shader,
+            geom_shader,
             occlusion_params,
         );
 
@@ -101,7 +101,7 @@ impl Renderer {
         let wireframe_pipeline = ctx.new_pipeline(
             &[buffer_layout, instance_buffer_layout],
             &attributes,
-            shader,
+            geom_shader,
             wireframe_params,
         );
 

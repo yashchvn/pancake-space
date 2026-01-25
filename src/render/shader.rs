@@ -5,7 +5,7 @@ pub fn load_shader(path: &str) -> String {
     fs::read_to_string(path).expect(&format!("Failed to read shader: {}", path))
 }
 
-pub fn shader_meta() -> ShaderMeta {
+pub fn geometry_shader_meta() -> ShaderMeta {
     ShaderMeta {
         uniforms: UniformBlockLayout {
             uniforms: vec![

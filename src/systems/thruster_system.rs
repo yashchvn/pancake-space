@@ -1,7 +1,7 @@
 use hecs::World;
 
 use crate::components::{
-    flight::{ControlCommand, ThrusterLimits},
+    flight::{AccelerationControlCommand, ThrusterLimits},
     physics::{Forces, Inertia, Mass},
     transform::Transform,
 };
@@ -13,7 +13,7 @@ pub fn thruster_system(world: &mut World) {
             &Mass,
             &Inertia,
             &mut Forces,
-            &ControlCommand,
+            &AccelerationControlCommand,
             &ThrusterLimits,
         )>()
         .iter()
@@ -34,8 +34,7 @@ pub fn thruster_system(world: &mut World) {
         let local_angular_accel = transform.orientation.inverse() * command.angular_acceleration;
 
         // Now compute torque using local-space inertia tensor
-        let inertia_tensor = inertia.inverse_tensor.inverse();
-        let local_desired_torque = inertia_tensor * local_angular_accel;
+        let local_desired_torque = inertia.inverse_tensor.inverse() * local_angular_accel;
 
         // Apply limits in local space
         let clamped_local_torque =
