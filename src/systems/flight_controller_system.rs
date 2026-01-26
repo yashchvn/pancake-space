@@ -43,12 +43,12 @@ pub fn flight_controller_system(world: &mut World, dt: f32) {
         //     ang_vel_derivative * controller.ang_vel_kd
         // );
 
-        println!(
-            "<{:4.2} {:4.2}>         |         <{:4.2} {:4.2}>",
-            target.target_linear_velocity,
-            linear_acceleration,
-            target.target_angular_velocity,
-            angular_acceleration
-        );
+        // println!(
+        //     "<{:4.2} {:4.2}>         |         <{:4.2} {:4.2}>",
+        //     target.target_linear_velocity,
+        //     linear_acceleration,
+        //     target.target_angular_velocity,
+        //     angular_acceleration
+        // );
     }
 }

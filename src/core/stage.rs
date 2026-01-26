@@ -56,7 +56,7 @@ impl Stage {
             Transform {
                 position: Vec3::ZERO,
                 orientation: Quat::IDENTITY,
-                scale: Vec3::new(0.01, 0.01, 0.01) * 0.0,
+                scale: Vec3::new(0.01, 0.01, 0.01),
             },
             Renderable::new(ship_mesh_id),
             Mass::new(5000.0),
@@ -73,37 +73,37 @@ impl Stage {
             NavigationTarget::new(Vec3::new(0.0, 0.0, 0.0), None, 2.0),
         ));
 
-        let grid_scale = 10;
-        let mut rand = rand::rng();
-        for i in 0..grid_scale {
-            for j in 0..grid_scale {
-                for k in 0..grid_scale {
-                    world.spawn((
-                        Transform {
-                            position: Vec3::new((i * 15) as f32, (j * 15) as f32, (k * 15) as f32),
-                            orientation: Quat::IDENTITY,
-                            scale: Vec3::ONE,
-                        },
-                        Renderable::new(teapot_mesh_id),
-                        Mass::new(1.0),
-                        Inertia::box_shape(10.0, Vec3::new(2.0, 1.5, 5.0)),
-                        Velocity::ZERO,
-                        // Forces::new(
-                        //     Vec3::new(
-                        //         rand.random_range(-175.0..175.0),
-                        //         rand.random_range(-175.0..175.0),
-                        //         rand.random_range(-175.0..175.0),
-                        //     ),
-                        //     Vec3::new(
-                        //         rand.random_range(-100.0..100.0),
-                        //         rand.random_range(-100.0..100.0),
-                        //         rand.random_range(-100.0..100.0),
-                        //     ),
-                        // ),
-                    ));
-                }
-            }
-        }
+        // let grid_scale = 10;
+        // let mut rand = rand::rng();
+        // for i in 0..grid_scale {
+        //     for j in 0..grid_scale {
+        //         for k in 0..grid_scale {
+        //             world.spawn((
+        //                 Transform {
+        //                     position: Vec3::new((i * 15) as f32, (j * 15) as f32, (k * 15) as f32),
+        //                     orientation: Quat::IDENTITY,
+        //                     scale: Vec3::ONE,
+        //                 },
+        //                 Renderable::new(teapot_mesh_id),
+        //                 Mass::new(1.0),
+        //                 Inertia::box_shape(10.0, Vec3::new(2.0, 1.5, 5.0)),
+        //                 Velocity::ZERO,
+        //                 // Forces::new(
+        //                 //     Vec3::new(
+        //                 //         rand.random_range(-175.0..175.0),
+        //                 //         rand.random_range(-175.0..175.0),
+        //                 //         rand.random_range(-175.0..175.0),
+        //                 //     ),
+        //                 //     Vec3::new(
+        //                 //         rand.random_range(-100.0..100.0),
+        //                 //         rand.random_range(-100.0..100.0),
+        //                 //         rand.random_range(-100.0..100.0),
+        //                 //     ),
+        //                 // ),
+        //             ));
+        //         }
+        //     }
+        // }
 
         Self {
             ctx,
@@ -135,16 +135,15 @@ impl EventHandler for Stage {
         thruster_system(&mut self.world);
 
         if let Ok(transform) = self.world.get::<&Transform>(self.player_entity) {
-            let local_offset = Vec3::new(4.0, 4.0, -10.0);
-
-            let rotated_offset = transform.orientation * local_offset;
-
-            self.camera.position = transform.position + rotated_offset;
-            self.camera.up = transform.orientation * Vec3::Y;
+            // let local_offset = Vec3::new(4.0, 4.0, -10.0);
+            // let rotated_offset = transform.orientation * local_offset;
+            // self.camera.position = transform.position + rotated_offset;
+            // self.camera.up = transform.orientation * Vec3::Y;
             self.camera.target = transform.position;
         }
 
         let mut linear_move = Vec3::ZERO;
+        let mut angular_move = Vec3::ZERO;
         if self.keys.contains(&KeyCode::W) {
             linear_move.z += 0.1;
         }
@@ -167,7 +166,7 @@ impl EventHandler for Stage {
         // self.camera.position += cam_linear_move * 2.0;
 
         if let Ok(mut nav_target) = self.world.get::<&mut NavigationTarget>(self.player_entity) {
-            nav_target.target_position += linear_move * 5.0;
+            nav_target.target_position += linear_move * 1.0;
         }
     }
 
@@ -176,7 +175,7 @@ impl EventHandler for Stage {
             self.world.query::<(&mut Transform, &Renderable)>().iter()
         {
             self.mesh_manager.submit_mesh_instance(
-                Instance::new(transform.to_mat4(), Vec4::new(0.1, 0.1, 0.1, 1.0)),
+                Instance::new(transform.to_mat4(), Vec4::new(0.05, 0.05, 0.05, 1.0)),
                 render_comp.mesh_id,
             );
         }

@@ -13,17 +13,21 @@ uniform mat4 view_proj;
 uniform vec4 color_override;
 
 void main() {
-    // Reconstruct the model matrix from the 4 vec4 attributes
     mat4 model = mat4(model0, model1, model2, model3);
 
-    // Transform position
-    gl_Position = view_proj * model * vec4(in_pos, 1.0);
+    vec3 pos = in_pos;
 
-    // Pass color to fragment shader
+    // If it's a wireframe pass, scale up the geometry to avoid z-fighting with solid pass
     if (color_override.a > 0.0) {
-        out_color = color_override.rgba;
+        pos *= 1.001;
+    }
+
+    gl_Position = view_proj * model * vec4(pos, 1.0);
+
+    // Pass color
+    if (color_override.a > 0.0) {
+        out_color = color_override;
     } else {
         out_color = in_color;
     }
-    // out_color = in_color;
 }
