@@ -119,7 +119,7 @@ fn load_obj(path: &str) -> Mesh {
     let text = read_to_string(path).unwrap();
 
     let mut vertices: Vec<Vertex> = Vec::new();
-    let mut indices: Vec<u16> = Vec::new();
+    let mut indices: Vec<u32> = Vec::new();
 
     for line in text.lines() {
         let line = line.trim();
@@ -142,25 +142,23 @@ fn load_obj(path: &str) -> Mesh {
             }
 
             "f" => {
-                let face: Vec<i32> = parts
+                let face: Vec<u32> = parts
                     .map(|p| {
-                        let v = p.split('/').next().unwrap();
-                        let i: i32 = v.parse().unwrap();
-
-                        // OBJ indices are 1-based, negatives are relative
-                        if i < 0 {
-                            vertices.len() as i32 + i
+                        let i: i32 = p.split('/').next().unwrap().parse().unwrap();
+                        let idx = if i < 0 {
+                            vertices.len() as i32 + i + 1
                         } else {
-                            i - 1
-                        }
+                            i
+                        };
+                        (idx - 1) as u32
                     })
                     .collect();
 
                 // Fan triangulation
                 for i in 1..face.len() - 1 {
-                    indices.push(face[0] as u16);
-                    indices.push(face[i] as u16);
-                    indices.push(face[i + 1] as u16);
+                    indices.push(face[0] as u32);
+                    indices.push(face[i] as u32);
+                    indices.push(face[i + 1] as u32);
                 }
             }
 
