@@ -1,4 +1,4 @@
-use glam::{Mat4, Vec3, Vec4};
+use glam::{Mat4, Vec2, Vec3, Vec4};
 use miniquad::{window::screen_size, *};
 use rand::Rng;
 
@@ -49,9 +49,9 @@ impl Renderer {
 
         // Solid pipeline (fills triangles)
         let geom_occlusion_params = PipelineParams {
-            depth_test: Comparison::LessOrEqual,
+            depth_test: Comparison::Less,
             depth_write: true,
-            depth_write_offset: Some((-1.0, -1.0)),
+            // depth_write_offset: Some((-1.0, -1.0)),
             primitive_type: PrimitiveType::Triangles,
             ..Default::default()
         };
@@ -68,7 +68,8 @@ impl Renderer {
 
         // Wireframe pipeline (lines, no depth write)
         let geom_wireframe_params = PipelineParams {
-            depth_test: Comparison::Less,
+            depth_test: Comparison::LessOrEqual,
+            // depth_write_offset: Some((1.0, 1.0)),
             depth_write: true,
             primitive_type: PrimitiveType::Lines,
             ..Default::default()
@@ -100,7 +101,7 @@ impl Renderer {
             .unwrap();
 
         let mut rng = rand::rng();
-        let starfield_vertices: Vec<Vec3> = (0..1000)
+        let starfield_vertices: Vec<Vec3> = (0..2000)
             .map(|_| {
                 Vec3::new(
                     rng.random_range(-1.0..1.0), // x
@@ -171,7 +172,7 @@ impl Renderer {
         ctx.apply_pipeline(&self.starfield_pipeline);
         ctx.apply_bindings(&self.starfield_bindings);
         ctx.apply_uniforms(UniformsSource::table(&(view_proj)));
-        ctx.draw(0, 10000, 1);
+        ctx.draw(0, 2000, 1);
     }
 
     fn draw_line_geometry(

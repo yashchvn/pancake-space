@@ -1,10 +1,11 @@
 use std::collections::HashSet;
+use std::f32;
 use std::time::Instant;
 
 use glam::{Quat, Vec2, Vec3, Vec4};
 use hecs::{Entity, World};
+use miniquad::gl::{GL_PROGRAM_POINT_SIZE, glEnable};
 use miniquad::{EventHandler, KeyCode, KeyMods, PassAction, RenderingBackend, window};
-use rand::Rng;
 
 use crate::components::flight::{
     AccelerationControlCommand, FlightController, TargetVelocity, ThrusterLimits,
@@ -39,6 +40,10 @@ pub struct Stage {
 
 impl Stage {
     pub fn new() -> Self {
+        unsafe {
+            glEnable(GL_PROGRAM_POINT_SIZE);
+        }
+
         let mut ctx = window::new_rendering_backend();
         let mut mesh_manager = MeshManager::new();
         let renderer = Renderer::new(&mut ctx);
@@ -48,29 +53,38 @@ impl Stage {
         let mouse_pos = Vec2::ZERO;
         let last_frame_time = Instant::now();
 
-        let teapot_mesh_id = mesh_manager.register_mesh(&mut ctx, "src/assets/meshes/teapot.obj");
-        let cow_mesh_id = mesh_manager.register_mesh(&mut ctx, "src/assets/meshes/cow.obj");
-        let ship_mesh_id = mesh_manager.register_mesh(&mut ctx, "src/assets/meshes/ship1.obj");
+        let albatross_mesh_id =
+            mesh_manager.register_mesh(&mut ctx, "src/assets/meshes/albatross.obj");
+        let planet_mesh_id = mesh_manager.register_mesh(&mut ctx, "src/assets/meshes/planet.obj");
 
         let player_entity = world.spawn((
             Transform {
                 position: Vec3::ZERO,
                 orientation: Quat::IDENTITY,
-                scale: Vec3::new(0.01, 0.01, 0.01),
+                scale: Vec3::ONE,
             },
-            Renderable::new(ship_mesh_id),
+            Renderable::new(albatross_mesh_id),
             Mass::new(5000.0),
-            Inertia::box_shape(5000.0, Vec3::new(3.0, 2.0, 5.0)),
+            Inertia::box_shape(5000.0, Vec3::new(9.5484, 1.28, 4.3138)),
             Velocity::ZERO,
             Forces::ZERO,
             ThrusterLimits::new(
-                Vec3::new(25000.0, 25000.0, 50000.0) * 2.0, // ~1g lateral, ~2g forward
-                Vec3::new(50000.0, 50000.0, 50000.0),       // Rotational control
+                Vec3::new(25000.0, 25000.0, 50000.0) * 2.0,
+                Vec3::new(50000.0, 50000.0, 50000.0),
             ),
             TargetVelocity::new(Vec3::ZERO, Vec3::ZERO),
-            FlightController::new(1.0, 0.1, 10.0, 0.5),
+            FlightController::new(1.0, 0.1, 2.0, 0.5),
             AccelerationControlCommand::new(),
-            NavigationTarget::new(Vec3::new(0.0, 0.0, 0.0), None, 2.0),
+            NavigationTarget::new(Vec3::new(0.0, 0.0, 0.0), Quat::IDENTITY, 2.0),
+        ));
+
+        world.spawn((
+            Transform {
+                position: Vec3::new(500.0, 500.0, 500.0),
+                orientation: Quat::IDENTITY,
+                scale: Vec3::ONE * 500.0,
+            },
+            Renderable::new(planet_mesh_id),
         ));
 
         // let grid_scale = 10;
@@ -129,6 +143,28 @@ impl EventHandler for Stage {
         }
         self.last_frame_time = now;
 
+        // Use to stress test flight controller/thruster limits
+        // if let Ok(mut forces) = self.world.get::<&mut Forces>(self.player_entity) {
+        //     let mut rand = rand::rng();
+        //     // forces.torque += Vec3::new(
+        //     //     rand.random_range(-100.0..100.0),
+        //     //     rand.random_range(-100.0..100.0),
+        //     //     rand.random_range(-100.0..100.0),
+        //     // ) * 800.0;
+
+        //     // forces.linear += Vec3::new(
+        //     //     rand.random_range(-100.0..100.0),
+        //     //     rand.random_range(-100.0..100.0),
+        //     //     rand.random_range(-100.0..100.0),
+        //     // ) * 800.0;
+
+        //     if rand.random_bool(0.2) {
+        //         forces.torque += Vec3::ONE * 80000.0;
+
+        //         forces.linear += Vec3::ONE * 80000.0;
+        //     }
+        // }
+
         physics_system(&mut self.world, delta_time);
         navigation_system(&mut self.world);
         flight_controller_system(&mut self.world, delta_time);
@@ -143,7 +179,6 @@ impl EventHandler for Stage {
         }
 
         let mut linear_move = Vec3::ZERO;
-        let mut angular_move = Vec3::ZERO;
         if self.keys.contains(&KeyCode::W) {
             linear_move.z += 0.1;
         }
@@ -163,10 +198,37 @@ impl EventHandler for Stage {
             linear_move.y -= 0.1;
         }
 
-        // self.camera.position += cam_linear_move * 2.0;
+        let mut delta_rot = Quat::IDENTITY;
+        if self.keys.contains(&KeyCode::I) {
+            delta_rot *= Quat::from_rotation_x(0.01);
+        }
+        if self.keys.contains(&KeyCode::K) {
+            delta_rot *= Quat::from_rotation_x(-0.01);
+        }
+        if self.keys.contains(&KeyCode::J) {
+            delta_rot *= Quat::from_rotation_y(0.01);
+        }
+        if self.keys.contains(&KeyCode::L) {
+            delta_rot *= Quat::from_rotation_y(-0.01);
+        }
+        if self.keys.contains(&KeyCode::E) {
+            delta_rot *= Quat::from_rotation_z(0.01);
+        }
+        if self.keys.contains(&KeyCode::Q) {
+            delta_rot *= Quat::from_rotation_z(-0.01);
+        }
 
         if let Ok(mut nav_target) = self.world.get::<&mut NavigationTarget>(self.player_entity) {
-            nav_target.target_position += linear_move * 1.0;
+            nav_target.target_position += linear_move * 2.0;
+
+            nav_target.target_orientation = (nav_target.target_orientation * delta_rot).normalize();
+        }
+
+        if self.keys.contains(&KeyCode::M) {
+            if let Ok(mut nav_target) = self.world.get::<&mut NavigationTarget>(self.player_entity)
+            {
+                nav_target.target_orientation = Quat::IDENTITY;
+            }
         }
     }
 
@@ -175,7 +237,7 @@ impl EventHandler for Stage {
             self.world.query::<(&mut Transform, &Renderable)>().iter()
         {
             self.mesh_manager.submit_mesh_instance(
-                Instance::new(transform.to_mat4(), Vec4::new(0.05, 0.05, 0.05, 1.0)),
+                Instance::new(transform.to_mat4(), Vec4::new(0.0, 0.0, 0.0, 1.0)),
                 render_comp.mesh_id,
             );
         }
