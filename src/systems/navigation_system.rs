@@ -4,21 +4,43 @@ use hecs::World;
 use crate::components::{
     flight::{TargetVelocity, ThrusterLimits},
     navigation::NavigationTarget,
-    physics::Mass,
+    physics::{Inertia, Mass},
     transform::Transform,
 };
 
 pub fn navigation_system(world: &mut World) {
-    for (_entity, (transform, nav_target, control_target, thruster_limits, mass)) in world
+    for (_entity, (transform, nav_target, control_target, thruster_limits, mass, inertia)) in world
         .query::<(
             &Transform,
             &NavigationTarget,
             &mut TargetVelocity,
             &ThrusterLimits,
             &Mass,
+            &Inertia,
         )>()
         .iter()
     {
+        // Angular
+        let mut orientation_error = nav_target.target_orientation * transform.orientation.inverse();
+
+        // Shortest-path quaternion
+        if orientation_error.w < 0.0 {
+            orientation_error = -orientation_error;
+        }
+
+        let (axis, angle) = orientation_error.to_axis_angle();
+
+        let alpha = inertia.inverse_tensor * thruster_limits.max_torque;
+
+        control_target.target_angular_velocity = Vec3::new(
+            (2.0 * alpha.x * angle).sqrt() * axis.x,
+            (2.0 * alpha.y * angle).sqrt() * axis.y,
+            (2.0 * alpha.z * angle).sqrt() * axis.z,
+        );
+
+        // println!("{}", control_target.target_angular_velocity);
+
+        // Linear
         let to_target = nav_target.target_position - transform.position;
         let distance = to_target.length();
 

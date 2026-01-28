@@ -3,21 +3,17 @@ use std::collections::VecDeque;
 
 pub struct NavigationTarget {
     pub target_position: Vec3,
-    pub target_orientation: Option<Quat>,
+    pub target_orientation: Quat,
     pub arrival_threshold: f32,
 }
 
 impl NavigationTarget {
-    pub fn new(position: Vec3, orientation: Option<Quat>, threshold: f32) -> Self {
+    pub fn new(position: Vec3, orientation: Quat, threshold: f32) -> Self {
         Self {
             target_position: position,
             target_orientation: orientation,
             arrival_threshold: threshold,
         }
-    }
-
-    pub fn position_only(position: Vec3, threshold: f32) -> Self {
-        Self::new(position, None, threshold)
     }
 }
 
