@@ -2,12 +2,10 @@ use glam::{Quat, Vec3};
 use hecs::World;
 use rapier3d::prelude::*;
 
-use crate::{
-    components::{
-        physics::{Forces, Velocity},
-        transform::Transform,
-    },
-    core::physics_structures::PhysicsWorld,
+use crate::physics::{
+    physics_components::{Forces, Velocity},
+    physics_world::PhysicsWorld,
+    transform::Transform,
 };
 
 pub fn sync_ecs_to_rapier(world: &World, physics_world: &mut PhysicsWorld) {

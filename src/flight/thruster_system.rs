@@ -1,9 +1,11 @@
 use hecs::World;
 
-use crate::components::{
-    flight::{AccelerationControlCommand, ThrusterLimits},
-    physics::{Forces, Inertia, Mass},
-    transform::Transform,
+use crate::{
+    flight::flight_components::{AccelerationControlCommand, ThrusterLimits},
+    physics::{
+        physics_components::{Forces, Inertia, Mass},
+        transform::Transform,
+    },
 };
 
 pub fn thruster_system(world: &mut World) {

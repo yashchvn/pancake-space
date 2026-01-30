@@ -1,5 +1,6 @@
-use crate::core::physics_structures::PhysicsWorld;
 use rapier3d::prelude::*;
+
+use crate::physics::physics_world::PhysicsWorld;
 
 pub fn physics_system(physics_world: &mut PhysicsWorld, dt: f32) {
     let gravity = vector![0.0, 0.0, 0.0];

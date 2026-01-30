@@ -1,8 +1,8 @@
 use hecs::World;
 
-use crate::components::{
-    flight::{AccelerationControlCommand, FlightController, TargetVelocity},
-    physics::Velocity,
+use crate::{
+    flight::flight_components::{AccelerationControlCommand, FlightController, TargetVelocity},
+    physics::physics_components::Velocity,
 };
 
 pub fn flight_controller_system(world: &mut World, dt: f32) {

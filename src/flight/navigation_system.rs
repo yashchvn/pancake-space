@@ -1,11 +1,15 @@
 use glam::Vec3;
 use hecs::World;
 
-use crate::components::{
-    flight::{TargetVelocity, ThrusterLimits},
-    navigation::NavigationTarget,
-    physics::{Inertia, Mass},
-    transform::Transform,
+use crate::{
+    flight::{
+        flight_components::{TargetVelocity, ThrusterLimits},
+        navigation_components::NavigationTarget,
+    },
+    physics::{
+        physics_components::{Inertia, Mass},
+        transform::Transform,
+    },
 };
 
 pub fn navigation_system(world: &mut World) {

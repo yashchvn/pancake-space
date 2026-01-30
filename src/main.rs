@@ -1,7 +1,7 @@
-mod components;
 mod core;
+mod flight;
+mod physics;
 mod render;
-mod systems;
 
 use core::stage::Stage;
 

@@ -9,23 +9,24 @@ use miniquad::{EventHandler, KeyCode, KeyMods, PassAction, RenderingBackend, win
 use rand::Rng;
 use rapier3d::prelude::*;
 
-use crate::components::flight::{
+use crate::flight::flight_components::{
     AccelerationControlCommand, FlightController, TargetVelocity, ThrusterLimits,
 };
-use crate::components::navigation::NavigationTarget;
-use crate::components::physics::{Forces, Inertia, Mass, Velocity};
-use crate::components::render::Renderable;
-use crate::components::transform::Transform;
-use crate::core::physics_structures::PhysicsWorld;
+use crate::flight::navigation_components::NavigationTarget;
+use crate::flight::{
+    flight_controller_system::flight_controller_system, navigation_system::navigation_system,
+    thruster_system::thruster_system,
+};
+use crate::physics::physics_components::{Forces, Inertia, Mass, Velocity};
+use crate::physics::physics_system::physics_system;
+use crate::physics::physics_world::PhysicsWorld;
+use crate::physics::sync_physics::{sync_ecs_to_rapier, sync_rapier_to_ecs};
+use crate::physics::transform::Transform;
 use crate::render::camera::Camera;
 use crate::render::mesh_batch::Instance;
 use crate::render::mesh_manager::MeshManager;
-use crate::render::renderer::*;
-use crate::systems::flight_controller_system::flight_controller_system;
-use crate::systems::navigation_system::navigation_system;
-use crate::systems::physics_system::physics_system;
-use crate::systems::sync_physics::{sync_ecs_to_rapier, sync_rapier_to_ecs};
-use crate::systems::thruster_system::thruster_system;
+use crate::render::render_components::Renderable;
+use crate::render::renderer::Renderer;
 
 pub struct Stage {
     ctx: Box<dyn RenderingBackend>,
