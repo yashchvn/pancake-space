@@ -46,23 +46,42 @@ pub struct Stage {
 
 impl Stage {
     pub fn new() -> Self {
-        unsafe {
-            glEnable(GL_PROGRAM_POINT_SIZE);
-        }
-
         let mut ctx = window::new_rendering_backend();
-        let mut mesh_manager = MeshManager::new();
         let renderer = Renderer::new(&mut ctx);
+        let mesh_manager = MeshManager::new();
         let camera = Camera::new(800.0 / 600.0);
-        let mut world = World::new();
-        let mut physics_world = PhysicsWorld::new();
+        let world = World::new();
+        let physics_world = PhysicsWorld::new();
         let keys = HashSet::new();
         let mouse_pos = Vec2::ZERO;
         let last_frame_time = Instant::now();
+        let player_entity = Entity::DANGLING;
 
-        let albatross_mesh_id =
-            mesh_manager.register_mesh(&mut ctx, "src/assets/meshes/albatross.obj");
-        let planet_mesh_id = mesh_manager.register_mesh(&mut ctx, "src/assets/meshes/planet.obj");
+        Self {
+            ctx,
+            mesh_manager,
+            renderer,
+            camera,
+            world,
+            physics_world,
+            keys,
+            mouse_pos,
+            last_frame_time,
+            player_entity,
+        }
+    }
+
+    pub fn init(&mut self) -> bool {
+        // unsafe {
+        //     glEnable(GL_PROGRAM_POINT_SIZE);
+        // }
+
+        let albatross_mesh_id = self
+            .mesh_manager
+            .register_mesh(&mut self.ctx, "src/assets/meshes/albatross.obj");
+        let planet_mesh_id = self
+            .mesh_manager
+            .register_mesh(&mut self.ctx, "src/assets/meshes/planet.obj");
 
         // todo: create helpers for spawning entities with physics/other
         // create init system which builds rapier rigidbody + collider for all entities with certain ecs components
@@ -70,14 +89,14 @@ impl Stage {
         let player_collider = ColliderBuilder::cuboid(9.5484 / 2.0, 1.28 / 2.0, 4.3138 / 2.0)
             .density(5000.0 / (9.5484 * 1.28 * 4.3138))
             .build();
-        let player_rb_handle = physics_world.bodies.insert(player_rb);
-        let player_collider_handle = physics_world.colliders.insert_with_parent(
+        let player_rb_handle = self.physics_world.bodies.insert(player_rb);
+        let player_collider_handle = self.physics_world.colliders.insert_with_parent(
             player_collider,
             player_rb_handle,
-            &mut physics_world.bodies,
+            &mut self.physics_world.bodies,
         );
 
-        let player_entity = world.spawn((
+        let player_entity = self.world.spawn((
             Transform {
                 position: Vec3::ZERO,
                 orientation: Quat::IDENTITY,
@@ -98,15 +117,16 @@ impl Stage {
             AccelerationControlCommand::new(),
             NavigationTarget::new(Vec3::new(0.0, 0.0, 0.0), Quat::IDENTITY, 2.0),
         ));
+        self.player_entity = player_entity;
 
-        world.spawn((
-            Transform {
-                position: Vec3::new(500.0, 500.0, 500.0),
-                orientation: Quat::IDENTITY,
-                scale: Vec3::ONE * 500.0,
-            },
-            Renderable::new(planet_mesh_id),
-        ));
+        // self.world.spawn((
+        //     Transform {
+        //         position: Vec3::new(500.0, 500.0, 500.0),
+        //         orientation: Quat::IDENTITY,
+        //         scale: Vec3::ONE * 500.0,
+        //     },
+        //     Renderable::new(planet_mesh_id),
+        // ));
 
         // let grid_scale = 10;
         // let mut rand = rand::rng();
@@ -140,18 +160,7 @@ impl Stage {
         //     }
         // }
 
-        Self {
-            ctx,
-            mesh_manager,
-            renderer,
-            camera,
-            world,
-            physics_world,
-            keys,
-            mouse_pos,
-            last_frame_time,
-            player_entity,
-        }
+        return true;
     }
 }
 
