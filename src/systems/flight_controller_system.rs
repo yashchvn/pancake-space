@@ -18,8 +18,8 @@ pub fn flight_controller_system(world: &mut World, dt: f32) {
         // ----- Linear -----
         let lin_vel_error = target.target_linear_velocity - velocity.linear;
 
-        controller.lin_vel_prev = lin_vel_error;
         let lin_vel_derivative = -(velocity.linear - controller.lin_vel_prev) / dt;
+        controller.lin_vel_prev = lin_vel_error;
 
         let linear_acceleration =
             lin_vel_error * controller.lin_vel_kp + lin_vel_derivative * controller.lin_vel_kd;
@@ -43,12 +43,12 @@ pub fn flight_controller_system(world: &mut World, dt: f32) {
         //     ang_vel_derivative * controller.ang_vel_kd
         // );
 
-        println!(
-            "<{:>07.2} {:>07.2}>         |         <{:>07.2} {:>07.2}>",
-            target.target_linear_velocity,
-            linear_acceleration,
-            target.target_angular_velocity,
-            angular_acceleration
-        );
+        // println!(
+        //     "<{:>07.2} {:>07.2}>         |         <{:>07.2} {:>07.2}>",
+        //     target.target_linear_velocity,
+        //     linear_acceleration,
+        //     target.target_angular_velocity,
+        //     angular_acceleration
+        // );
     }
 }
