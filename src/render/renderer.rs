@@ -1,5 +1,5 @@
-use glam::{Mat4, Vec2, Vec3, Vec4};
-use miniquad::{window::screen_size, *};
+use glam::{Mat4, Vec3, Vec4};
+use miniquad::*;
 use rand::Rng;
 
 use crate::render::{mesh_batch::Instance, mesh_manager::MeshManager, shader::*, vertex::Vertex};

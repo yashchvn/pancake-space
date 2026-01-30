@@ -6,6 +6,8 @@ use glam::{Quat, Vec2, Vec3, Vec4};
 use hecs::{Entity, World};
 use miniquad::gl::{GL_PROGRAM_POINT_SIZE, glEnable};
 use miniquad::{EventHandler, KeyCode, KeyMods, PassAction, RenderingBackend, window};
+use rand::Rng;
+use rapier3d::prelude::*;
 
 use crate::components::flight::{
     AccelerationControlCommand, FlightController, TargetVelocity, ThrusterLimits,
@@ -257,7 +259,7 @@ impl EventHandler for Stage {
 
     fn draw(&mut self) {
         for (_entity, (transform, render_comp)) in
-            self.world.query::<(&mut Transform, &Renderable)>().iter()
+            self.world.query::<(&Transform, &Renderable)>().iter()
         {
             self.mesh_manager.submit_mesh_instance(
                 Instance::new(transform.to_mat4(), Vec4::new(0.0, 0.0, 0.0, 1.0)),
