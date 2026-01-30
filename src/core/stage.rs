@@ -14,6 +14,7 @@ use crate::components::navigation::NavigationTarget;
 use crate::components::physics::{Forces, Inertia, Mass, Velocity};
 use crate::components::render::Renderable;
 use crate::components::transform::Transform;
+use crate::core::physics_structures::PhysicsWorld;
 use crate::render::camera::Camera;
 use crate::render::mesh_batch::Instance;
 use crate::render::mesh_manager::MeshManager;
@@ -21,6 +22,7 @@ use crate::render::renderer::*;
 use crate::systems::flight_controller_system::flight_controller_system;
 use crate::systems::navigation_system::navigation_system;
 use crate::systems::physics_system::physics_system;
+use crate::systems::sync_physics::{sync_ecs_to_rapier, sync_rapier_to_ecs};
 use crate::systems::thruster_system::thruster_system;
 
 pub struct Stage {
@@ -30,6 +32,7 @@ pub struct Stage {
     camera: Camera,
 
     world: hecs::World,
+    physics_world: PhysicsWorld,
 
     keys: HashSet<KeyCode>,
     mouse_pos: Vec2,
@@ -49,6 +52,7 @@ impl Stage {
         let renderer = Renderer::new(&mut ctx);
         let camera = Camera::new(800.0 / 600.0);
         let mut world = World::new();
+        let mut physics_world = PhysicsWorld::new();
         let keys = HashSet::new();
         let mouse_pos = Vec2::ZERO;
         let last_frame_time = Instant::now();
@@ -57,6 +61,19 @@ impl Stage {
             mesh_manager.register_mesh(&mut ctx, "src/assets/meshes/albatross.obj");
         let planet_mesh_id = mesh_manager.register_mesh(&mut ctx, "src/assets/meshes/planet.obj");
 
+        // todo: create helpers for spawning entities with physics/other
+        // create init system which builds rapier rigidbody + collider for all entities with certain ecs components
+        let player_rb = RigidBodyBuilder::dynamic().build();
+        let player_collider = ColliderBuilder::cuboid(9.5484 / 2.0, 1.28 / 2.0, 4.3138 / 2.0)
+            .density(5000.0 / (9.5484 * 1.28 * 4.3138))
+            .build();
+        let player_rb_handle = physics_world.bodies.insert(player_rb);
+        let player_collider_handle = physics_world.colliders.insert_with_parent(
+            player_collider,
+            player_rb_handle,
+            &mut physics_world.bodies,
+        );
+
         let player_entity = world.spawn((
             Transform {
                 position: Vec3::ZERO,
@@ -64,6 +81,7 @@ impl Stage {
                 scale: Vec3::ONE,
             },
             Renderable::new(albatross_mesh_id),
+            player_rb_handle,
             Mass::new(5000.0),
             Inertia::box_shape(5000.0, Vec3::new(9.5484, 1.28, 4.3138)),
             Velocity::ZERO,
@@ -125,6 +143,7 @@ impl Stage {
             renderer,
             camera,
             world,
+            physics_world,
             keys,
             mouse_pos,
             last_frame_time,
@@ -165,10 +184,14 @@ impl EventHandler for Stage {
         //     }
         // }
 
-        physics_system(&mut self.world, delta_time);
         navigation_system(&mut self.world);
         flight_controller_system(&mut self.world, delta_time);
         thruster_system(&mut self.world);
+
+        sync_ecs_to_rapier(&self.world, &mut self.physics_world);
+        physics_system(&mut self.physics_world, delta_time);
+
+        sync_rapier_to_ecs(&mut self.world, &mut self.physics_world);
 
         if let Ok(transform) = self.world.get::<&Transform>(self.player_entity) {
             // let local_offset = Vec3::new(4.0, 4.0, -10.0);
