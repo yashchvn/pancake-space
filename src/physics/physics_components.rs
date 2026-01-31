@@ -15,14 +15,19 @@ impl Mass {
 }
 
 pub struct Inertia {
+    pub tensor: Mat3,
     pub inverse_tensor: Mat3,
 }
 
 impl Inertia {
     pub fn sphere(mass: f32, radius: f32) -> Self {
         let i = 0.4 * mass * radius * radius;
+
+        let inverse_tensor = Mat3::from_diagonal(Vec3::splat(1.0 / i));
+
         Self {
-            inverse_tensor: Mat3::from_diagonal(Vec3::splat(1.0 / i)),
+            tensor: inverse_tensor.inverse(),
+            inverse_tensor: inverse_tensor,
         }
     }
 
@@ -30,8 +35,12 @@ impl Inertia {
         let ix = (mass / 12.0) * (extents.y * extents.y + extents.z * extents.z);
         let iy = (mass / 12.0) * (extents.x * extents.x + extents.z * extents.z);
         let iz = (mass / 12.0) * (extents.x * extents.x + extents.y * extents.y);
+
+        let inverse_tensor = Mat3::from_diagonal(Vec3::new(1.0 / ix, 1.0 / iy, 1.0 / iz));
+
         Self {
-            inverse_tensor: Mat3::from_diagonal(Vec3::new(1.0 / ix, 1.0 / iy, 1.0 / iz)),
+            tensor: inverse_tensor.inverse(),
+            inverse_tensor: inverse_tensor,
         }
     }
 }

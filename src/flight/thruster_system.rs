@@ -36,7 +36,7 @@ pub fn thruster_system(world: &mut World) {
         let local_angular_accel = transform.orientation.inverse() * command.angular_acceleration;
 
         // Now compute torque using local-space inertia tensor
-        let local_desired_torque = inertia.inverse_tensor.inverse() * local_angular_accel;
+        let local_desired_torque = inertia.tensor * local_angular_accel;
 
         // Apply limits in local space
         let clamped_local_torque =
