@@ -7,20 +7,30 @@ use crate::{
         navigation_components::NavigationTarget,
     },
     physics::{
-        physics_components::{Inertia, Mass},
+        physics_components::{InertiaProperties, MassProperties},
         transform::Transform,
     },
 };
 
 pub fn navigation_system(world: &mut World) {
-    for (_entity, (transform, nav_target, control_target, thruster_limits, mass, inertia)) in world
+    for (
+        _entity,
+        (
+            transform,
+            nav_target,
+            control_target,
+            thruster_limits,
+            mass_properties,
+            inertia_properties,
+        ),
+    ) in world
         .query::<(
             &Transform,
             &NavigationTarget,
             &mut TargetVelocity,
             &ThrusterLimits,
-            &Mass,
-            &Inertia,
+            &MassProperties,
+            &InertiaProperties,
         )>()
         .iter()
     {
@@ -34,7 +44,7 @@ pub fn navigation_system(world: &mut World) {
 
         let (axis, angle) = orientation_error.to_axis_angle();
 
-        let alpha = inertia.inverse_tensor * thruster_limits.max_torque;
+        let alpha = inertia_properties.inverse_inertia * thruster_limits.max_torque;
 
         control_target.target_angular_velocity = Vec3::new(
             (2.0 * alpha.x * angle).sqrt() * axis.x,
@@ -59,7 +69,7 @@ pub fn navigation_system(world: &mut World) {
             direction,
             transform,
             thruster_limits,
-            mass.mass,
+            mass_properties.mass,
         );
 
         control_target.target_linear_velocity =

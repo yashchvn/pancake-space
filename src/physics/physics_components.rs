@@ -1,11 +1,11 @@
 use glam::{Mat3, Vec3};
 
-pub struct Mass {
+pub struct MassProperties {
     pub mass: f32,
     pub inverse_mass: f32,
 }
 
-impl Mass {
+impl MassProperties {
     pub fn new(mass: f32) -> Self {
         Self {
             mass: mass,
@@ -14,33 +14,16 @@ impl Mass {
     }
 }
 
-pub struct Inertia {
-    pub tensor: Mat3,
-    pub inverse_tensor: Mat3,
+pub struct InertiaProperties {
+    pub inertia: Mat3,
+    pub inverse_inertia: Mat3,
 }
 
-impl Inertia {
-    pub fn sphere(mass: f32, radius: f32) -> Self {
-        let i = 0.4 * mass * radius * radius;
-
-        let inverse_tensor = Mat3::from_diagonal(Vec3::splat(1.0 / i));
-
+impl InertiaProperties {
+    pub fn new(inertia: Mat3) -> Self {
         Self {
-            tensor: inverse_tensor.inverse(),
-            inverse_tensor: inverse_tensor,
-        }
-    }
-
-    pub fn box_shape(mass: f32, extents: Vec3) -> Self {
-        let ix = (mass / 12.0) * (extents.y * extents.y + extents.z * extents.z);
-        let iy = (mass / 12.0) * (extents.x * extents.x + extents.z * extents.z);
-        let iz = (mass / 12.0) * (extents.x * extents.x + extents.y * extents.y);
-
-        let inverse_tensor = Mat3::from_diagonal(Vec3::new(1.0 / ix, 1.0 / iy, 1.0 / iz));
-
-        Self {
-            tensor: inverse_tensor.inverse(),
-            inverse_tensor: inverse_tensor,
+            inertia: inertia,
+            inverse_inertia: inertia.inverse(),
         }
     }
 }
@@ -71,4 +54,16 @@ impl Forces {
         linear: Vec3::ZERO,
         torque: Vec3::ZERO,
     };
+}
+
+pub struct BoxCollider {
+    pub extents: Vec3,
+}
+
+impl BoxCollider {
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
+        Self {
+            extents: Vec3::new(x, y, z),
+        }
+    }
 }

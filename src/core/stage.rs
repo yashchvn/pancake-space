@@ -4,10 +4,8 @@ use std::time::Instant;
 
 use glam::{Quat, Vec2, Vec3, Vec4};
 use hecs::{Entity, World};
-use miniquad::gl::{GL_PROGRAM_POINT_SIZE, glEnable};
 use miniquad::{EventHandler, KeyCode, KeyMods, PassAction, RenderingBackend, window};
 use rand::Rng;
-use rapier3d::prelude::*;
 
 use crate::flight::flight_components::{
     AccelerationControlCommand, FlightController, TargetVelocity, ThrusterLimits,
@@ -17,10 +15,11 @@ use crate::flight::{
     flight_controller_system::flight_controller_system, navigation_system::navigation_system,
     thruster_system::thruster_system,
 };
-use crate::physics::physics_components::{Forces, Inertia, Mass, Velocity};
+
+use crate::physics::physics_components::{BoxCollider, Forces, MassProperties, Velocity};
 use crate::physics::physics_system::physics_system;
 use crate::physics::physics_world::PhysicsWorld;
-use crate::physics::sync_physics::{sync_ecs_to_rapier, sync_rapier_to_ecs};
+use crate::physics::sync_physics::{sync_ecs_to_rapier, sync_new_entities, sync_rapier_to_ecs};
 use crate::physics::transform::Transform;
 use crate::render::camera::Camera;
 use crate::render::mesh_batch::Instance;
@@ -82,19 +81,9 @@ impl Stage {
         let planet_mesh_id = self
             .mesh_manager
             .register_mesh(&mut self.ctx, "src/assets/meshes/planet.obj");
-
-        // todo: create helpers for spawning entities with physics/other
-        // create init system which builds rapier rigidbody + collider for all entities with certain ecs components
-        let player_rb = RigidBodyBuilder::dynamic().build();
-        let player_collider = ColliderBuilder::cuboid(9.5484 / 2.0, 1.28 / 2.0, 4.3138 / 2.0)
-            .density(5000.0 / (9.5484 * 1.28 * 4.3138))
-            .build();
-        let player_rb_handle = self.physics_world.bodies.insert(player_rb);
-        let player_collider_handle = self.physics_world.colliders.insert_with_parent(
-            player_collider,
-            player_rb_handle,
-            &mut self.physics_world.bodies,
-        );
+        let teapot_mesh_id = self
+            .mesh_manager
+            .register_mesh(&mut self.ctx, "src/assets/meshes/teapot.obj");
 
         let player_entity = self.world.spawn((
             Transform {
@@ -103,9 +92,8 @@ impl Stage {
                 scale: Vec3::ONE,
             },
             Renderable::new(albatross_mesh_id),
-            player_rb_handle,
-            Mass::new(5000.0),
-            Inertia::box_shape(5000.0, Vec3::new(9.5484, 1.28, 4.3138)),
+            MassProperties::new(5000.0),
+            BoxCollider::new(9.5484, 1.28, 4.3138),
             Velocity::ZERO,
             Forces::ZERO,
             ThrusterLimits::new(
@@ -119,6 +107,46 @@ impl Stage {
         ));
         self.player_entity = player_entity;
 
+        let mut rand = rand::rng();
+        for i in 1..100 {
+            let random_pos = Vec3::new(
+                rand.random_range(-1.0..1.0),
+                rand.random_range(-1.0..1.0),
+                rand.random_range(-1.0..1.0),
+            )
+            .normalize()
+                * 30.0;
+
+            let random_target = Vec3::new(
+                rand.random_range(-1.0..1.0),
+                rand.random_range(-1.0..1.0),
+                rand.random_range(-1.0..1.0),
+            )
+            .normalize()
+                * 30.0;
+
+            self.world.spawn((
+                Transform {
+                    position: random_pos,
+                    orientation: Quat::IDENTITY,
+                    scale: Vec3::ONE,
+                },
+                Renderable::new(albatross_mesh_id),
+                MassProperties::new(5000.0),
+                BoxCollider::new(9.5484, 1.28, 4.3138),
+                Velocity::ZERO,
+                Forces::ZERO,
+                ThrusterLimits::new(
+                    Vec3::new(25000.0, 25000.0, 50000.0) * 2.0,
+                    Vec3::new(50000.0, 50000.0, 50000.0),
+                ),
+                TargetVelocity::new(Vec3::ZERO, Vec3::ZERO),
+                FlightController::new(1.0, 0.1, 2.0, 0.5),
+                AccelerationControlCommand::new(),
+                NavigationTarget::new(Vec3::new(20.0, 20.0, 20.0), Quat::IDENTITY, 2.0),
+            ));
+        }
+
         // self.world.spawn((
         //     Transform {
         //         position: Vec3::new(500.0, 500.0, 500.0),
@@ -128,12 +156,11 @@ impl Stage {
         //     Renderable::new(planet_mesh_id),
         // ));
 
-        // let grid_scale = 10;
-        // let mut rand = rand::rng();
+        // let grid_scale = 5;
         // for i in 0..grid_scale {
         //     for j in 0..grid_scale {
         //         for k in 0..grid_scale {
-        //             world.spawn((
+        //             self.world.spawn((
         //                 Transform {
         //                     position: Vec3::new((i * 15) as f32, (j * 15) as f32, (k * 15) as f32),
         //                     orientation: Quat::IDENTITY,
@@ -143,18 +170,18 @@ impl Stage {
         //                 Mass::new(1.0),
         //                 Inertia::box_shape(10.0, Vec3::new(2.0, 1.5, 5.0)),
         //                 Velocity::ZERO,
-        //                 // Forces::new(
-        //                 //     Vec3::new(
-        //                 //         rand.random_range(-175.0..175.0),
-        //                 //         rand.random_range(-175.0..175.0),
-        //                 //         rand.random_range(-175.0..175.0),
-        //                 //     ),
-        //                 //     Vec3::new(
-        //                 //         rand.random_range(-100.0..100.0),
-        //                 //         rand.random_range(-100.0..100.0),
-        //                 //         rand.random_range(-100.0..100.0),
-        //                 //     ),
-        //                 // ),
+        //                 Forces::new(
+        //                     Vec3::new(
+        //                         rand.random_range(-175.0..175.0),
+        //                         rand.random_range(-175.0..175.0),
+        //                         rand.random_range(-175.0..175.0),
+        //                     ),
+        //                     Vec3::new(
+        //                         rand.random_range(-100.0..100.0),
+        //                         rand.random_range(-100.0..100.0),
+        //                         rand.random_range(-100.0..100.0),
+        //                     ),
+        //                 ),
         //             ));
         //         }
         //     }
@@ -172,34 +199,36 @@ impl EventHandler for Stage {
         if delta_time < 1.0 / 70.0 {
             return;
         }
+
         self.last_frame_time = now;
 
         // Use to stress test flight controller/thruster limits
-        // if let Ok(mut forces) = self.world.get::<&mut Forces>(self.player_entity) {
+        // for (_entity, (forces)) in self.world.query_mut::<&mut Forces>() {
         //     let mut rand = rand::rng();
-        //     // forces.torque += Vec3::new(
-        //     //     rand.random_range(-100.0..100.0),
-        //     //     rand.random_range(-100.0..100.0),
-        //     //     rand.random_range(-100.0..100.0),
-        //     // ) * 800.0;
+        //     forces.torque += Vec3::new(
+        //         rand.random_range(-100.0..100.0),
+        //         rand.random_range(-100.0..100.0),
+        //         rand.random_range(-100.0..100.0),
+        //     ) * 800.0;
 
-        //     // forces.linear += Vec3::new(
-        //     //     rand.random_range(-100.0..100.0),
-        //     //     rand.random_range(-100.0..100.0),
-        //     //     rand.random_range(-100.0..100.0),
-        //     // ) * 800.0;
+        //     forces.linear += Vec3::new(
+        //         rand.random_range(-100.0..100.0),
+        //         rand.random_range(-100.0..100.0),
+        //         rand.random_range(-100.0..100.0),
+        //     ) * 800.0;
 
-        //     if rand.random_bool(0.2) {
-        //         forces.torque += Vec3::ONE * 80000.0;
+        //     // if rand.random_bool(0.2) {
+        //     //     forces.torque += Vec3::ONE * 80000.0;
 
-        //         forces.linear += Vec3::ONE * 80000.0;
-        //     }
+        //     //     forces.linear += Vec3::ONE * 80000.0;
+        //     // }
         // }
 
         navigation_system(&mut self.world);
         flight_controller_system(&mut self.world, delta_time);
         thruster_system(&mut self.world);
 
+        sync_new_entities(&mut self.world, &mut self.physics_world);
         sync_ecs_to_rapier(&self.world, &mut self.physics_world);
         physics_system(&mut self.physics_world, delta_time);
 
