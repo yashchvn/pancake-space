@@ -107,7 +107,7 @@ impl Renderer {
                     rng.random_range(-1.0..1.0),
                     rng.random_range(-1.0..1.0),
                     rng.random_range(-1.0..1.0),
-                )
+                ) * 10000.0
             })
             .collect();
 
