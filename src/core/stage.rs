@@ -38,7 +38,9 @@ pub struct Stage {
 
     keys: HashSet<KeyCode>,
     mouse_pos: Vec2,
+
     last_frame_time: Instant,
+    elapsed_time: f32,
 
     player_entity: Entity,
 }
@@ -54,6 +56,7 @@ impl Stage {
         let keys = HashSet::new();
         let mouse_pos = Vec2::ZERO;
         let last_frame_time = Instant::now();
+        let elapsed_time = 0.0;
         let player_entity = Entity::DANGLING;
 
         Self {
@@ -66,6 +69,7 @@ impl Stage {
             keys,
             mouse_pos,
             last_frame_time,
+            elapsed_time,
             player_entity,
         }
     }
@@ -123,7 +127,7 @@ impl Stage {
                 rand.random_range(-1.0..1.0),
             )
             .normalize()
-                * 30.0;
+                * 200.0;
 
             self.world.spawn((
                 Transform {
@@ -143,7 +147,7 @@ impl Stage {
                 TargetVelocity::new(Vec3::ZERO, Vec3::ZERO),
                 FlightController::new(1.0, 0.1, 2.0, 0.5),
                 AccelerationControlCommand::new(),
-                NavigationTarget::new(Vec3::new(20.0, 20.0, 20.0), Quat::IDENTITY, 2.0),
+                NavigationTarget::new(random_target, Quat::IDENTITY, 2.0),
             ));
         }
 
@@ -195,8 +199,10 @@ impl EventHandler for Stage {
     fn update(&mut self) {
         let now = Instant::now();
         let delta_time = now.duration_since(self.last_frame_time).as_secs_f32();
+        self.elapsed_time += delta_time;
         // println!("{}", 1.0 / delta_time);
         if delta_time < 1.0 / 70.0 {
+            // todo: use accumulator instead of skipped frames
             return;
         }
 
@@ -235,10 +241,11 @@ impl EventHandler for Stage {
         sync_rapier_to_ecs(&mut self.world, &mut self.physics_world);
 
         if let Ok(transform) = self.world.get::<&Transform>(self.player_entity) {
-            // let local_offset = Vec3::new(4.0, 4.0, -10.0);
-            // let rotated_offset = transform.orientation * local_offset;
-            // self.camera.position = transform.position + rotated_offset;
-            // self.camera.up = transform.orientation * Vec3::Y;
+            if self.camera.position.distance(transform.position) > 10.0 {
+                let direction = (self.camera.position - transform.position).normalize();
+                self.camera.position = transform.position + direction * 10.0;
+            }
+
             self.camera.target = transform.position;
         }
 
@@ -293,6 +300,17 @@ impl EventHandler for Stage {
             {
                 nav_target.target_orientation = Quat::IDENTITY;
             }
+        }
+
+        for (entity, nav_target) in self.world.query_mut::<&mut NavigationTarget>() {
+            if self.player_entity == entity {
+                continue;
+            }
+
+            let angle = self.elapsed_time * 0.5; // 0.5 is the speed, adjust as needed
+            let radius = (((entity.id()) * 100) + 50) as f32; // adjust radius as needed
+
+            nav_target.target_position = Vec3::new(0.0, radius * angle.cos(), radius * angle.sin());
         }
     }
 
