@@ -104,11 +104,10 @@ impl Renderer {
         let starfield_vertices: Vec<Vec3> = (0..2000)
             .map(|_| {
                 Vec3::new(
-                    rng.random_range(-1.0..1.0), // x
-                    rng.random_range(-1.0..1.0), // y
-                    rng.random_range(-1.0..1.0), // z
+                    rng.random_range(-1.0..1.0),
+                    rng.random_range(-1.0..1.0),
+                    rng.random_range(-1.0..1.0),
                 )
-                .normalize()
             })
             .collect();
 
